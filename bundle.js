@@ -6056,6 +6056,9 @@ const authActions = {
     return dispatch => {
       dispatch({ type: __WEBPACK_IMPORTED_MODULE_0__constants_actionConstants__["a" /* default */].SIGN_IN_REQUESTING });
       return fetchRequest(data, signInUrl).then(json => {
+        if (!json.success && json.err) {
+          throw new Error(json.err);
+        }
         dispatch(__WEBPACK_IMPORTED_MODULE_4__notification_notificationActions__["a" /* default */].addNew('success', 'Successfully!', 'You have successfully login.'));
         __WEBPACK_IMPORTED_MODULE_3__authToken__["a" /* default */].setToken(json.data.token);
         __WEBPACK_IMPORTED_MODULE_2__sockets_chatSocket__["a" /* default */].connect(dispatch);
@@ -59186,7 +59189,8 @@ const initialState = {
       });
     case __WEBPACK_IMPORTED_MODULE_0__constants_actionConstants__["a" /* default */].LOG_OUT_REQUESTING:
       return _extends({}, initialState, {
-        loading: true
+        loading: true,
+        isAuthentificated: false
       });
     case __WEBPACK_IMPORTED_MODULE_0__constants_actionConstants__["a" /* default */].LOG_OUT_SUCCESS:
       return _extends({}, state, {
@@ -66032,12 +66036,7 @@ class LoginForm extends __WEBPACK_IMPORTED_MODULE_0_react___default.a.Component 
           __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
             'p',
             { className: 'm-0 d-inline' },
-            'Do you have account on github.com or vk.com?'
-          ),
-          __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
-            'a',
-            { className: 'btn btn-primary ml-2', href: `${authUrlStart}/github` },
-            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('i', { className: 'fa fa-github', 'aria-hidden': 'true' })
+            'Do you have account on vk.com?'
           ),
           __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
             'a',
@@ -69632,7 +69631,8 @@ class NewEvent extends __WEBPACK_IMPORTED_MODULE_0_react___default.a.Component {
       type: 'textarea',
       component: __WEBPACK_IMPORTED_MODULE_7__shared_InputTextarea__["a" /* default */],
       name: 'description',
-      label: 'Description'
+      label: 'Description',
+      validate: [__WEBPACK_IMPORTED_MODULE_9__validators_validationForm__["a" /* default */].required]
     }];
     return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
       'div',
@@ -89703,12 +89703,13 @@ const fetchInterceptor = store => __WEBPACK_IMPORTED_MODULE_0_fetch_intercept___
   },
 
   response: response => response.json().then(json => {
-    if (!json.success && json.error === 'You are not authorized: invalid token') {
-      if (__WEBPACK_IMPORTED_MODULE_2__authorization_authToken__["a" /* default */].hasToken() || store.user.isAuthentificated) {
+    if (!json.success && json.err) {
+      if (json.err === 'You are not authorized: invalid token') {
         store.dispatch(__WEBPACK_IMPORTED_MODULE_3__authorization_authActions__["a" /* default */].logOutRequest());
+        throw new Error('You are not authorized');
       }
 
-      throw new Error(json.error);
+      throw new Error(json.err);
     }
     if (!json.success && json.error === 'Invalid credentials') {
       throw new Error('Incorrect login or password');
